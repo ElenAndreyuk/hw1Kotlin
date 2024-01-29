@@ -20,12 +20,12 @@ fun main() {
 //println(checkEmail("tom@example.com"))
 //   println(checkPhone("000003"))
 //    println(checkName("Tom"))
-    while (flag){
+    do{
         var responce = readlnOrNull()
         val parts = responce?.split(" ")
-
+        if(parts != null) {
             when {
-                parts!![0] == "help" -> println("exit\n help\n add <Имя> phone <Номер телефона>\nadd <Имя> email <Адрес электронной почты>")
+                parts[0] == "help" -> println("exit\n help\n add <Имя> phone <Номер телефона>\nadd <Имя> email <Адрес электронной почты>")
                 parts[0] == "add" && checkName(parts[1]) && parts[2] == "phone" && checkPhone(parts[3]) -> println("${parts[1]} ${parts[3]}")
                 parts[0] == "add" && checkName(parts[1]) && parts[2] == "email" && checkEmail(parts[3]) -> println("${parts[1]} ${parts[3]}")
 
@@ -33,8 +33,9 @@ fun main() {
                 parts[0] == "exit" -> flag = false
                 else -> println("input error")
             }
+        }
 
-    }
+    }while (flag)
     println("exit")
 
 
@@ -42,7 +43,7 @@ fun main() {
 fun checkPhone(a: String) : Boolean {
     var result = false
     val pattern1 = """[0-9]+"""
-    val pattern2 = """\\+\\[0-9]+"""   //?????
+    val pattern2 = "/+?[0-9]+"  //?????
     if(a.matches(Regex(pattern1)) ){
         result = true
     }
