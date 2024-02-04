@@ -46,12 +46,9 @@ sealed interface Command {
         }
 
         fun savePersonPhone() {
-            println("save1")
             if (Show.persons.containsKey(name)) {
                 Show.persons[name]?.phones?.add(phone)
-                println("save2")
             } else Show.persons.put(name, Person(name, phone = phone))
-            println("save3")
             println("Save ${name}, ${phone}")
         }
     }
@@ -99,12 +96,6 @@ class Find(val value: List<String> ) : Command{
                 value[1].matches(Regex("\\+?[0-9]+")))
     }
 
-//    fun search() : String{
-//        if(value[1].matches(Regex("\\w+\\@\\w+\\.\\w+"))){
-//            return Show.persons.map{a,_ -> a.value}.map{b, _ -> b.email}.find { c.email == value[1] }.name
-//        }
-//
-//    }
     fun search(){
         val searchValue = value[1]
         val foundPeople = mutableListOf<Person>()
