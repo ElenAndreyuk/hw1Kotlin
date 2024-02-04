@@ -10,6 +10,7 @@ fun main() {
                 is AddEmail -> if( command.isValid())command.savePersonEmail()
                 is Show ->  if(command.isValid())command.showPerson()
                 is ShowAll -> command.showAll()
+                is Find -> command.search()
             }
         }else Help.showHelp()
     }while (flag)
@@ -27,6 +28,7 @@ fun readCommand(): Command {
             "addEmail" -> AddEmail(parts)
             "show"     -> Show(parts)
             "showAll"  -> ShowAll(parts[0])
+            "find"     -> Find(parts)
             else       -> Help(parts[0])
         }
     }else return Help("help")

@@ -74,7 +74,6 @@ sealed interface Command {
     class Show(val value: List<String>) : Command {
         var name = value[1]
             override fun isValid(): Boolean {
-     //           var name = value[1]
                 return (name.matches(Regex("""[A-Z][a-z]+""")))
             }
 
@@ -94,4 +93,32 @@ sealed interface Command {
             println(Show.persons)
         }
     }
+class Find(val value: List<String> ) : Command{
+    override fun isValid(): Boolean {
+        return (value[1].matches(Regex("\\w+\\@\\w+\\.\\w+")) ||
+                value[1].matches(Regex("\\+?[0-9]+")))
+    }
+
+//    fun search() : String{
+//        if(value[1].matches(Regex("\\w+\\@\\w+\\.\\w+"))){
+//            return Show.persons.map{a,_ -> a.value}.map{b, _ -> b.email}.find { c.email == value[1] }.name
+//        }
+//
+//    }
+    fun search(){
+        val searchValue = value[1]
+        val foundPeople = mutableListOf<Person>()
+
+        if (searchValue.matches(Regex("\\w+\\@\\w+\\.\\w+"))) {
+            foundPeople.addAll(Show.persons.values.filter { it.emails.contains(searchValue) })
+        } else if (searchValue.matches(Regex("""\+?[0-9]+"""))) {
+            foundPeople.addAll(Show.persons.values.filter { it.phones.contains(searchValue) })
+        }
+
+        println( foundPeople)
+    }
+
+
+}
+
 
