@@ -1,6 +1,14 @@
-data class Person(var name: String, var phone: String = "", var email: String = "") {
+data class Person(val name: String, val phone: String? = null, val email: String? = null) {
+    var phones: MutableList<String> = mutableListOf()
+    var emails: MutableList<String> = mutableListOf()
+
+    init {
+        phone?.let { phones = mutableListOf(it) }
+        email?.let { emails = mutableListOf(it) }
+    }
+
     override fun toString(): String {
-        return "name='$name', phone='$phone', email='$email'"
+        return "name='$name', phones='$phones', emails='$emails'"
     }
 }
 
@@ -19,12 +27,18 @@ sealed interface Command {
         }
         companion object {
             fun showHelp() {
-            println("exit\n help\n show\n addPhone <Имя> <Номер телефона>\naddEmail <Имя>  <Адрес электронной почты>")
+            println("""Commands:
+            exit 
+            help
+            show
+            showAll
+            addPhone <Имя> <Номер телефона>
+            addEmail <Имя>  <Адрес электронной почты>""".trimMargin())
             }
         }
     }
 
-    class AddPhone(val value: List<String>) : Command{
+    class AddPhone(val value: List<String>) : Command {
         var name = value[1]
         var phone = value[2]
         override fun isValid(): Boolean {
@@ -32,34 +46,52 @@ sealed interface Command {
         }
 
         fun savePersonPhone() {
-            Show.lastPerson = Person(name = name, phone = phone)
+            println("save1")
+            if (Show.persons.containsKey(name)) {
+                Show.persons[name]?.phones?.add(phone)
+                println("save2")
+            } else Show.persons.put(name, Person(name, phone = phone))
+            println("save3")
             println("Save ${name}, ${phone}")
         }
     }
-
     class AddEmail(val value: List<String>) : Command {
+            var name = value[1]
+            var email = value[2]
+            override fun isValid(): Boolean {
+                return (name.matches(Regex("""[A-Z][a-z]+"""))
+                        && email.matches(Regex("\\w+\\@\\w+\\.\\w+")))
+            }
+
+            fun savePersonEmail() {
+                if (Show.persons[name] != null) {
+                    Show.persons[name]?.emails?.add(email)
+                } else Show.persons.put(name, Person(name = name, email = email))
+                println("Save ${name}, ${email}")
+            }
+        }
+
+    class Show(val value: List<String>) : Command {
         var name = value[1]
-        var email = value[2]
-        override fun isValid(): Boolean {
-            return (name.matches(Regex("""[A-Z][a-z]+"""))
-                    && email.matches(Regex("\\w+\\@\\w+\\.\\w+")))
+            override fun isValid(): Boolean {
+     //           var name = value[1]
+                return (name.matches(Regex("""[A-Z][a-z]+""")))
+            }
+
+            companion object {
+                val persons : MutableMap<String, Person> = mutableMapOf()
+            }
+
+            fun showPerson() {
+                println(Show.persons[name] ?: "Not initialized")
+            }
         }
-        fun savePersonEmail(){
-            Show.lastPerson = Person(name = name, phone = email)
-            println("Save ${name}, ${email}")
+    class ShowAll(val value: String) : Command{
+        override fun isValid(): Boolean {
+            return (value == "showAll")
+        }
+        fun showAll(){
+            println(Show.persons)
         }
     }
-
-    class Show(val value: String) : Command {
-        override fun isValid(): Boolean {
-            return (value == "show")
-        }
-        companion object{
-            var lastPerson: Person? = null
-        }
-        fun showPerson(){
-        println(lastPerson?: "Not initialized")
-        }
-    }
-
 
