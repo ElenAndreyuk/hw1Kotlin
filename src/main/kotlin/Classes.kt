@@ -1,11 +1,9 @@
-data class Person(val name: String, val phone: String? = null, val email: String? = null) {
-    var phones: MutableList<String> = mutableListOf()
-    var emails: MutableList<String> = mutableListOf()
+import java.io.File
+import java.io.FileNotFoundException
 
-    init {
-        phone?.let { phones = mutableListOf(it) }
-        email?.let { emails = mutableListOf(it) }
-    }
+data class Person(val name: String,
+                  val phones: MutableList<String> =mutableListOf(),
+                  val emails: MutableList<String> = mutableListOf()) {
 
     override fun toString(): String {
         return "name='$name', phones='$phones', emails='$emails'"
@@ -33,12 +31,15 @@ sealed interface Command {
             show
             showAll
             addPhone <Имя> <Номер телефона>
-            addEmail <Имя>  <Адрес электронной почты>""".trimMargin())
+            addEmail <Имя>  <Адрес электронной почты>
+            find <email or phone>
+            export </Users/user/myfile.json>
+            """.trimMargin())
             }
         }
     }
 
-    class AddPhone(val value: List<String>) : Command {
+    class AddPhone(val value: List<String>, var persons : MutableMap<String, Person>) : Command {
         var name = value[1]
         var phone = value[2]
         override fun isValid(): Boolean {
@@ -46,13 +47,13 @@ sealed interface Command {
         }
 
         fun savePersonPhone() {
-            if (Show.persons.containsKey(name)) {
-                Show.persons[name]?.phones?.add(phone)
-            } else Show.persons.put(name, Person(name, phone = phone))
+            if (persons.containsKey(name)) {
+                persons[name]?.phones?.add(phone)
+            } else persons.put(name, Person(name, mutableListOf(phone), mutableListOf()))
             println("Save ${name}, ${phone}")
         }
     }
-    class AddEmail(val value: List<String>) : Command {
+    class AddEmail(val value: List<String>, var persons : MutableMap<String, Person>) : Command {
             var name = value[1]
             var email = value[2]
             override fun isValid(): Boolean {
@@ -61,55 +62,107 @@ sealed interface Command {
             }
 
             fun savePersonEmail() {
-                if (Show.persons[name] != null) {
-                    Show.persons[name]?.emails?.add(email)
-                } else Show.persons.put(name, Person(name = name, email = email))
+                if (persons[name] != null) {
+                    persons[name]?.emails?.add(email)
+                } else persons.put(name, Person(name, mutableListOf(), mutableListOf(email)))
                 println("Save ${name}, ${email}")
             }
         }
 
-    class Show(val value: List<String>) : Command {
+    class Show(val value: List<String>,  var persons : MutableMap<String, Person>) : Command {
         var name = value[1]
             override fun isValid(): Boolean {
                 return (name.matches(Regex("""[A-Z][a-z]+""")))
             }
 
-            companion object {
-                val persons : MutableMap<String, Person> = mutableMapOf()
-            }
-
             fun showPerson() {
-                println(Show.persons[name] ?: "Not initialized")
+                println(persons[name] ?: "Not initialized")
             }
         }
-    class ShowAll(val value: String) : Command{
+    class ShowAll(val value: String,  var persons : MutableMap<String, Person>) : Command{
         override fun isValid(): Boolean {
             return (value == "showAll")
         }
         fun showAll(){
-            println(Show.persons)
+            println(persons)
         }
     }
-class Find(val value: List<String> ) : Command{
-    override fun isValid(): Boolean {
+    class Find(val value: List<String>,  var persons : MutableMap<String, Person> ) : Command{
+        override fun isValid(): Boolean {
         return (value[1].matches(Regex("\\w+\\@\\w+\\.\\w+")) ||
                 value[1].matches(Regex("\\+?[0-9]+")))
     }
 
-    fun search(){
-        val searchValue = value[1]
-        val foundPeople = mutableListOf<Person>()
+        fun search(){
+            val searchValue = value[1]
+            val foundPeople = mutableListOf<Person>()
 
-        if (searchValue.matches(Regex("\\w+\\@\\w+\\.\\w+"))) {
-            foundPeople.addAll(Show.persons.values.filter { it.emails.contains(searchValue) })
-        } else if (searchValue.matches(Regex("""\+?[0-9]+"""))) {
-            foundPeople.addAll(Show.persons.values.filter { it.phones.contains(searchValue) })
+            when{
+                searchValue.matches(Regex("\\w+\\@\\w+\\.\\w+")) ->
+                    foundPeople.addAll(persons.values.filter { it.emails.contains(searchValue) })
+                searchValue.matches(Regex("""\+?[0-9]+""")) ->
+                    foundPeople.addAll(persons.values.filter { it.phones.contains(searchValue) })
+            }
+            println(foundPeople)
+         }
+    }
+    class Export(val value: List<String>,  var persons : MutableMap<String, Person>) : Command{
+        val path = value[1]
+        val text = ""
+        override fun isValid(): Boolean {
+            return File(path).exists() || File(path).createNewFile()
         }
 
-        println( foundPeople)
+        fun save(text: String){
+            try{
+                File(path).writeText(text)
+                println("written to file")
+            }catch (e: FileNotFoundException){
+                println(e)
+            }
+        }
+    }
+open class DSLJson () {
+    companion object {
+        fun toJson(persons : MutableMap<String, Person>): String {
+            var res: String = "{"
+            val pers = persons.values
+            for (person in pers) {
+                res += "\"name\": " + Quotes(person.name).toString() + ","
+                res += "\"phones\": ["
+                for (phone in person.phones){
+                    res += Quotes(phone).toString() + ","
+                }
+                res = res.dropLast(1)
+                res+= "], "
+                res += "\"emails\": ["
+                for (email in person.emails){
+                    res += Quotes(email).toString() + ","
+                }
+                res = res.trimEnd(',')
+                res+= "]"
+
+            }
+            res += "}"
+            return res
+        }
     }
 
 
 }
+class Quotes(var a: String) : DSLJson() {
+    override fun  toString(): String{
+        return """ "$a""""
+    }
+}
+
+//{
+//    "name": "Elena",
+//    "phones": [
+//        "888",
+//        "000"
+//    ],
+//    "emails": []
+//}
 
 
